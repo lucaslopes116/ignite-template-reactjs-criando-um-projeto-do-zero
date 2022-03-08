@@ -1,6 +1,7 @@
 import { GetStaticProps } from 'next';
 
 import Prismic from '@prismicio/client';
+import { FiCalendar, FiUser } from 'react-icons/fi';
 import { getPrismicClient } from '../services/prismic';
 
 import commonStyles from '../styles/common.module.scss';
@@ -38,8 +39,13 @@ export default function Home({ posts, postsPagination }) {
             <h1>{post.title}</h1>
             <p>{post.subtitle}</p>
             <div>
-              <time>{post.first_publication_date}</time>
-              <span>{post.author}</span>
+              <time>
+                <FiCalendar /> {post.first_publication_date}
+              </time>
+              <span>
+                <FiUser />
+                {post.author}
+              </span>
             </div>
           </div>
         );

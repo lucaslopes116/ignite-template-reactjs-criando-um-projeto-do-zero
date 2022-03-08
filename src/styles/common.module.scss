@@ -1,13 +1,15 @@
 .container {
   background-color: var(--background);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
+  flex-direction: column;
 }
 
 .posts {
   max-width: 720px;
-  margin: 5rem 0;
+  margin-top: 61px;
+  margin-bottom: 48px;
 
   h1 {
     font-size: 28px;
@@ -21,12 +23,25 @@
     font-weight: 400;
     text-align: justify;
     color: var(--body);
+    margin-bottom: 24px;
+  }
+  div {
+    margin-top: 25px;
+  }
+
+  svg {
+    margin-right: 5px;
+  }
+
+  span {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--info);
   }
 
   time {
-    display: block;
-    font-size: 1 rem;
-    color: var(--gray-300);
-    margin-top: 1.5rem;
+    font-size: 14px;
+    color: var(--info);
+    margin-right: 26px;
   }
 }
