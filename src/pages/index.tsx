@@ -31,10 +31,7 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home({
-  postsPagination,
-  preview,
-}: HomeProps): JSX.Element {
+export default function Home({ postsPagination }: HomeProps): JSX.Element {
   const [posts, setPosts] = useState<Post[]>(postsPagination.results);
   const [nextPage, setNextPage] = useState<string>(postsPagination.next_page);
 
@@ -44,7 +41,10 @@ export default function Home({
 
     const newPosts = jsonResponse.results.map((post: Document) => ({
       uid: post.uid,
-      first_publication_date: post.first_publication_date,
+      first_publication_date:
+        format(new Date(post.first_publication_date), 'dd MMM yyyy', {
+          locale: ptBR,
+        }) ?? 'Sem data disponível',
       data: {
         title: post.data.title,
         subtitle: post.data.subtitle,
@@ -91,10 +91,7 @@ export default function Home({
   );
 }
 
-export const getStaticProps: GetStaticProps = async ({
-  preview = false,
-  previewData = null,
-}) => {
+export const getStaticProps: GetStaticProps = async () => {
   const prismic = getPrismicClient();
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'posts')],
@@ -108,7 +105,6 @@ export const getStaticProps: GetStaticProps = async ({
         'posts.body',
       ],
       pageSize: 1,
-      ref: previewData?.ref ?? null,
     }
   );
 
@@ -119,7 +115,7 @@ export const getStaticProps: GetStaticProps = async ({
         first_publication_date:
           format(new Date(last_publication_date), 'dd MMM yyyy', {
             locale: ptBR,
-          }) ?? 'erro',
+          }) ?? 'Sem data disponível',
         data: {
           title: data.title,
           subtitle: data.subtitle,
@@ -135,7 +131,6 @@ export const getStaticProps: GetStaticProps = async ({
         next_page: postsResponse.next_page,
         results: posts,
       },
-      preview,
     },
     revalidate: 60 * 5, // 5min
   };
