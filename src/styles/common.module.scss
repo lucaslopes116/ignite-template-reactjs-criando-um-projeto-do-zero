@@ -16,6 +16,7 @@
     font-weight: 700;
     text-align: justify;
     margin-bottom: 8px;
+    cursor: pointer;
   }
 
   p {
@@ -44,4 +45,12 @@
     color: var(--info);
     margin-right: 26px;
   }
+}
+
+.btnCarregarMais {
+  color: var(--highlight);
+  font-size: 18px;
+  font-weight: 600;
+  background: none;
+  border: none;
 }

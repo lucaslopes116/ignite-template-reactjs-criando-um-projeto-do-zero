@@ -1,9 +1,13 @@
 import { GetStaticProps } from 'next';
-
+import { format } from 'date-fns';
+import ptBR from 'date-fns/locale/pt-BR';
 import Prismic from '@prismicio/client';
+import ApiSearchResponse from '@prismicio/client/types/ApiSearchResponse';
 import { FiCalendar, FiUser } from 'react-icons/fi';
+import { Document } from '@prismicio/client/types/documents';
+import Link from 'next/link';
+import { useState } from 'react';
 import { getPrismicClient } from '../services/prismic';
-
 import commonStyles from '../styles/common.module.scss';
 
 import styles from './home.module.scss';
@@ -27,34 +31,70 @@ interface HomeProps {
   postsPagination: PostPagination;
 }
 
-export default function Home({ posts, postsPagination }) {
-  console.log('1', posts);
-  console.log('2', postsPagination);
+export default function Home({
+  postsPagination,
+  preview,
+}: HomeProps): JSX.Element {
+  const [posts, setPosts] = useState<Post[]>(postsPagination.results);
+  const [nextPage, setNextPage] = useState<string>(postsPagination.next_page);
+
+  async function handleMorePosts(): Promise<void> {
+    const response = await fetch(nextPage);
+    const jsonResponse = (await response.json()) as ApiSearchResponse;
+
+    const newPosts = jsonResponse.results.map((post: Document) => ({
+      uid: post.uid,
+      first_publication_date: post.first_publication_date,
+      data: {
+        title: post.data.title,
+        subtitle: post.data.subtitle,
+        author: post.data.author,
+      },
+    }));
+
+    setPosts([...posts, ...newPosts]);
+    setNextPage(jsonResponse.next_page);
+  }
 
   return (
     <div className={commonStyles.container}>
-      {posts.map(post => {
+      {posts.map((post, i) => {
         return (
-          <div className={commonStyles.posts}>
-            <h1>{post.title}</h1>
-            <p>{post.subtitle}</p>
-            <div>
-              <time>
-                <FiCalendar /> {post.first_publication_date}
-              </time>
-              <span>
-                <FiUser />
-                {post.author}
-              </span>
+          <Link key={post.uid} href={`/post/${post.uid}`}>
+            <div className={commonStyles.posts}>
+              <h1>{post.data.title}</h1>
+              <p>{post.data.subtitle}</p>
+              <div>
+                <time>
+                  <FiCalendar /> {post.first_publication_date}
+                </time>
+                <span>
+                  <FiUser />
+                  {post.data.author}
+                </span>
+              </div>
             </div>
-          </div>
+          </Link>
         );
       })}
+
+      {nextPage && (
+        <button
+          onClick={handleMorePosts}
+          className={commonStyles.btnCarregarMais}
+          type="button"
+        >
+          Carregar mais posts
+        </button>
+      )}
     </div>
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async ({
+  preview = false,
+  previewData = null,
+}) => {
   const prismic = getPrismicClient();
   const postsResponse = await prismic.query(
     [Prismic.predicates.at('document.type', 'posts')],
@@ -64,44 +104,39 @@ export const getStaticProps: GetStaticProps = async () => {
         'posts.title',
         'posts.subtitle',
         'posts.author',
-        'posts.banner',
-        'posts.content',
         'posts.heading',
         'posts.body',
       ],
       pageSize: 1,
+      ref: previewData?.ref ?? null,
     }
   );
 
   const posts = postsResponse.results.map(
     ({ uid, last_publication_date, data }: Post) => {
       return {
-        slug: uid,
+        uid,
         first_publication_date:
-          new Date(last_publication_date).toLocaleDateString('pt-BR', {
-            day: '2-digit',
-            month: 'long',
-            year: 'numeric',
-          }) ?? first_publication_date,
-        title: data.title,
-        subtitle: data.subtitle,
-        author: data.author,
-        banner: data.banner,
-        content: data.content,
+          format(new Date(last_publication_date), 'dd MMM yyyy', {
+            locale: ptBR,
+          }) ?? 'erro',
+        data: {
+          title: data.title,
+          subtitle: data.subtitle,
+          author: data.author,
+        },
       };
     }
   );
 
-  const postsPagination = {
-    next_page: postsResponse.next_page,
-    results: postsResponse.results,
-  };
-
   return {
     props: {
-      posts,
-      postsPagination,
+      postsPagination: {
+        next_page: postsResponse.next_page,
+        results: posts,
+      },
+      preview,
     },
-    revalidate: 60 * 60 * 24, // 24 horas
+    revalidate: 60 * 5, // 5min
   };
 };
